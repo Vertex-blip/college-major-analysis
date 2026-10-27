@@ -1,0 +1,33 @@
+# Analysis prepared with assistance from Codex; run in a fresh R console.
+library(collegeIncome)
+data(college, package = "collegeIncome")
+library(matahari)
+dance_start(value = FALSE, contents = FALSE)
+analysis_assistance <- "Prepared with Codex assistance on 2026-10-27"
+str(college)
+stopifnot(all(c("major_category", "median") %in% names(college)))
+analysis_data <- college[complete.cases(college[, c("major_category", "median")]) & college$median > 0, ]
+analysis_data$major_category <- droplevels(factor(analysis_data$major_category))
+print(c(majors = nrow(analysis_data), categories = nlevels(analysis_data$major_category), excluded = nrow(college) - nrow(analysis_data)))
+group_summary <- data.frame(major_category = levels(analysis_data$major_category), majors = as.integer(table(analysis_data$major_category)), mean_median_income = as.numeric(tapply(analysis_data$median, analysis_data$major_category, mean)), median_median_income = as.numeric(tapply(analysis_data$median, analysis_data$major_category, median)))
+group_summary <- group_summary[order(group_summary$mean_median_income, decreasing = TRUE), ]
+print(group_summary, row.names = FALSE)
+income_null <- lm(log(median) ~ 1, data = analysis_data)
+income_model <- lm(log(median) ~ major_category, data = analysis_data)
+income_test <- anova(income_null, income_model)
+print(income_test)
+print(summary(income_model))
+income_kruskal <- kruskal.test(median ~ major_category, data = analysis_data)
+print(income_kruskal)
+write.csv(group_summary, "income_by_category.csv", row.names = FALSE)
+png("income_by_major_category.png", width = 1800, height = 1200, res = 150)
+par(mar = c(12, 5, 3, 1))
+boxplot(log10(median) ~ major_category, data = analysis_data, las = 2, ylab = "Log10 of median annual earnings (USD)", xlab = "", main = "Median earnings across college major categories", col = "lightblue")
+dev.off()
+analysis_results <- list(majors = nrow(analysis_data), categories = nlevels(analysis_data$major_category), excluded = nrow(college) - nrow(analysis_data), f_statistic = unname(income_test$F[2]), df_numerator = unname(income_test$Df[2]), df_denominator = df.residual(income_model), p_value = unname(income_test$`Pr(>F)`[2]), r_squared = unname(summary(income_model)$r.squared), kruskal_statistic = unname(income_kruskal$statistic), kruskal_df = unname(income_kruskal$parameter), kruskal_p_value = income_kruskal$p.value)
+jsonlite::write_json(analysis_results, "analysis_results.json", auto_unbox = TRUE, pretty = TRUE, digits = 15)
+print(analysis_results)
+dance_save("college_major_analysis.rds")
+dance_stop()
+
+saveRDS(readRDS("college_major_analysis.rds"), "college_major_analysis.rds", compress = TRUE)

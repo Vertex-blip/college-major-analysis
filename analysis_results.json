@@ -1,0 +1,13 @@
+{
+  "majors": 173,
+  "categories": 16,
+  "excluded": 0,
+  "f_statistic": 1.2169837325184,
+  "df_numerator": 15,
+  "df_denominator": 157,
+  "p_value": 0.264171657757307,
+  "r_squared": 0.104161258762354,
+  "kruskal_statistic": 15.2723853013162,
+  "kruskal_df": 15,
+  "kruskal_p_value": 0.431980615026573
+}
